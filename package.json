@@ -24,9 +24,6 @@
       "preload.js",
       "package.json"
     ],
-    "linux": {
-      "target": "AppImage"
-    },
     "win": {
       "target": "nsis",
       "icon": "build/icon.ico"
