@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Functional Food Cost Tracker v3 - Tabbed</title>
+    <style>
+        /* --- General Styles --- */
+        :root {
+            --primary-color: #007bff;
+            --primary-hover: #0056b3;
+            --danger-color: #dc3545;
+            --danger-hover: #c82333;
+            --light-gray: #f4f7f6;
+            --medium-gray: #e0e0e0;
+            --dark-gray: #333;
+            --white: #ffffff;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--light-gray);
+            margin: 0;
+            padding: 2rem;
+            color: var(--dark-gray);
+        }
+
+        .app-container {
+            max-width: 1000px;
+            margin: 2rem auto; /* Centering the container */
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden; /* Contains the border-radius */
+        }
+
+        /* --- Tab Navigation --- */
+        .tab-nav {
+            display: flex;
+            background-color: #f9f9f9;
+            border-bottom: 1px solid var(--medium-gray);
+        }
+
+        .tab-link {
+            padding: 1rem 2rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1.2rem; /* Bigger font */
+            font-weight: 600;
+            color: #555;
+            transition: color 0.2s, border-bottom 0.2s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-link:hover {
+            color: var(--primary-color);
+        }
+
+        .tab-link.active {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+        }
+        
+        /* --- App Screen (Replaces Window) --- */
+        .app-screen {
+            display: none; /* Hidden by default */
+        }
+        .app-screen.active {
+            display: block; /* Shown when active */
+        }
+
+        .screen-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem; /* Increased padding */
+            border-bottom: 1px solid var(--medium-gray);
+        }
+
+        .screen-header h2 {
+            margin: 0;
+            font-size: 1.75rem; /* Bigger font */
+            font-weight: 600;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem; /* Bigger buttons */
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+            cursor: pointer;
+            font-size: 1rem; /* Bigger font */
+            font-weight: 500;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #e0e0e0;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+            border-color: var(--danger-color);
+        }
+
+        .btn-danger:hover {
+            background-color: var(--danger-hover);
+        }
+        
+        .btn:disabled {
+            background-color: #d4d4d4;
+            cursor: not-allowed;
+            border-color: #c0c0c0;
+        }
+
+
+        .screen-content {
+            padding: 0;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1.25rem 2rem; /* Increased padding */
+            text-align: left;
+            border-bottom: 1px solid var(--medium-gray);
+            font-size: 1.1rem; /* Bigger font */
+        }
+
+        th {
+            font-weight: 600;
+            background-color: #f9f9f9;
+            position: sticky;
+            top: 0;
+        }
+
+        tbody tr {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background-color: #f0f8ff;
+        }
+
+        tbody tr.selected {
+            background-color: #d4eaff;
+        }
+
+        /* --- Modal Styles (Mostly Unchanged, but with bigger fonts) --- */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 2.5rem; /* Increased padding */
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 600px; /* Wider modal */
+            border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--medium-gray);
+            padding-bottom: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.7rem; /* Bigger font */
+        }
+
+        .close-btn {
+            color: #aaa;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600; /* Bolder labels */
+            font-size: 1.1rem; /* Bigger font */
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem; /* Increased padding */
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; 
+            font-size: 1rem; /* Bigger font */
+        }
+        
+        .ingredient-adder {
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-end;
+        }
+        .ingredient-adder .form-group {
+            flex-grow: 1;
+            margin-bottom: 0;
+        }
+        .ingredient-adder input {
+            width: 120px; /* Wider input */
+            flex-grow: 0;
+        }
+
+        #recipe-ingredients-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 1rem;
+            max-height: 180px; /* Taller list */
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        #recipe-ingredients-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.85rem; /* Increased padding */
+            border-bottom: 1px solid #eee;
+            font-size: 1.05rem; /* Bigger font */
+        }
+        #recipe-ingredients-list li:last-child {
+            border-bottom: none;
+        }
+        .remove-recipe-ing-btn {
+            background: none;
+            border: none;
+            color: var(--danger-color);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <nav class="tab-nav">
+            <button class="tab-link active" data-tab="ingredients">Ingredients</button>
+            <button class="tab-link" data-tab="menu">Menu</button>
+        </nav>
+
+        <main>
+            <div id="ingredients-screen" class="app-screen active">
+                <div class="screen-header">
+                    <h2>Ingredients</h2>
+                    <div class="button-group">
+                        <button id="add-ingredient-btn" class="btn btn-primary">Add</button>
+                        <button id="edit-ingredient-btn" class="btn" disabled>Edit</button>
+                        <button id="delete-ingredient-btn" class="btn btn-danger" disabled>Delete</button>
+                    </div>
+                </div>
+                <div class="screen-content">
+                    <table id="ingredients-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Cost/Unit</th>
+                                <th>Servings/Unit</th>
+                                <th>Cost/Serving</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="menu-screen" class="app-screen">
+                <div class="screen-header">
+                    <h2>Menu Items</h2>
+                    <div class="button-group">
+                        <button id="add-menu-item-btn" class="btn btn-primary">Add</button>
+                        <button id="edit-menu-item-btn" class="btn" disabled>Edit</button>
+                        <button id="delete-menu-item-btn" class="btn btn-danger" disabled>Delete</button>
+                    </div>
+                </div>
+                <div class="screen-content">
+                    <table id="menu-items-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Menu Price</th>
+                                <th>Cost ($)</th>
+                                <th>Cost (%)</th>
+                                <th>Profit</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="ingredient-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="ingredient-modal-title">Add Ingredient</h3>
+                <span class="close-btn" id="close-ingredient-modal">&times;</span>
+            </div>
+            <form id="ingredient-form">
+                <input type="hidden" id="ingredient-id">
+                <div class="form-group">
+                    <label for="ingredient-name">Ingredient Name</label>
+                    <input type="text" id="ingredient-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="ingredient-cost">Cost Per Unit ($)</label>
+                    <input type="number" id="ingredient-cost" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="ingredient-servings">Servings Per Unit</label>
+                    <input type="number" id="ingredient-servings" step="any" min="0.01" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Ingredient</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="menu-item-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="menu-item-modal-title">Add Menu Item</h3>
+                <span class="close-btn" id="close-menu-item-modal">&times;</span>
+            </div>
+            <form id="menu-item-form">
+                <input type="hidden" id="menu-item-id">
+                <div class="form-group">
+                    <label for="menu-item-name">Menu Item Name</label>
+                    <input type="text" id="menu-item-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="menu-item-price">Menu Price ($)</label>
+                    <input type="number" id="menu-item-price" step="0.01" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Recipe Ingredients</label>
+                    <div class="ingredient-adder">
+                        <div class="form-group">
+                            <label for="recipe-ingredient-select" class="visually-hidden">Select Ingredient</label>
+                            <select id="recipe-ingredient-select"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="recipe-ingredient-servings" class="visually-hidden">Servings</label>
+                             <input type="number" id="recipe-ingredient-servings" step="any" placeholder="Servings">
+                        </div>
+                        <button type="button" id="add-recipe-ing-btn" class="btn">Add</button>
+                    </div>
+                </div>
+
+                <ul id="recipe-ingredients-list"></ul>
+                
+                <hr style="margin: 2rem 0;">
+                <button type="submit" class="btn btn-primary">Save Menu Item</button>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- State Management ---
+        let ingredients = JSON.parse(localStorage.getItem('ingredientsV3')) || [];
+        let menuItems = JSON.parse(localStorage.getItem('menuItemsV3')) || [];
+        let selectedIngredientId = null;
+        let selectedMenuItemId = null;
+        let currentRecipe = []; 
+        
+        // --- DOM Elements ---
+        const ingredientsTableBody = document.querySelector('#ingredients-table tbody');
+        const menuItemsTableBody = document.querySelector('#menu-items-table tbody');
+        
+        const addIngredientBtn = document.getElementById('add-ingredient-btn');
+        const editIngredientBtn = document.getElementById('edit-ingredient-btn');
+        const deleteIngredientBtn = document.getElementById('delete-ingredient-btn');
+        const addMenuItemBtn = document.getElementById('add-menu-item-btn');
+        const editMenuItemBtn = document.getElementById('edit-menu-item-btn');
+        const deleteMenuItemBtn = document.getElementById('delete-menu-item-btn');
+
+        const ingredientModal = document.getElementById('ingredient-modal');
+        const menuItemModal = document.getElementById('menu-item-modal');
+        const closeIngredientModalBtn = document.getElementById('close-ingredient-modal');
+        const closeMenuItemModalBtn = document.getElementById('close-menu-item-modal');
+        
+        const ingredientForm = document.getElementById('ingredient-form');
+        const menuItemForm = document.getElementById('menu-item-form');
+        
+        // --- NEW Tab Navigation Elements ---
+        const tabLinks = document.querySelectorAll('.tab-link');
+        const appScreens = document.querySelectorAll('.app-screen');
+
+        // --- Helper Functions ---
+        const saveState = () => {
+            // Using a new key to avoid conflicts with old version
+            localStorage.setItem('ingredientsV3', JSON.stringify(ingredients));
+            localStorage.setItem('menuItemsV3', JSON.stringify(menuItems));
+        };
+
+        const formatCurrency = (value) => {
+            return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+        };
+
+        const updateButtonStates = () => {
+            editIngredientBtn.disabled = selectedIngredientId === null;
+            deleteIngredientBtn.disabled = selectedIngredientId === null;
+            editMenuItemBtn.disabled = selectedMenuItemId === null;
+            deleteMenuItemBtn.disabled = selectedMenuItemId === null;
+            
+            // The "Add Menu Item" button is on a different screen, but we'll manage its state globally
+            const addMenuItemBtnOnMenuScreen = document.querySelector('#menu-screen #add-menu-item-btn');
+            if (addMenuItemBtnOnMenuScreen) {
+                 addMenuItemBtnOnMenuScreen.disabled = ingredients.length === 0;
+            }
+        };
+
+        // --- Render Functions ---
+        const renderIngredients = () => {
+            ingredientsTableBody.innerHTML = '';
+            ingredients.forEach(ing => {
+                const costPerServing = ing.servings > 0 ? ing.cost / ing.servings : 0;
+                const row = document.createElement('tr');
+                row.dataset.id = ing.id;
+                row.innerHTML = `
+                    <td>${ing.name}</td>
+                    <td>${formatCurrency(ing.cost)}</td>
+                    <td>${ing.servings}</td>
+                    <td>${formatCurrency(costPerServing)}</td>
+                `;
+                if (ing.id === selectedIngredientId) row.classList.add('selected');
+
+                row.addEventListener('click', () => {
+                    selectedIngredientId = selectedIngredientId === ing.id ? null : ing.id;
+                    selectedMenuItemId = null; // Deselect menu items when an ingredient is clicked
+                    renderAll();
+                });
+                ingredientsTableBody.appendChild(row);
+            });
+            updateButtonStates();
+        };
+
+        const renderMenuItems = () => {
+            menuItemsTableBody.innerHTML = '';
+            menuItems.forEach(item => {
+                const totalCost = item.recipe.reduce((sum, recipeItem) => {
+                    const ingredient = ingredients.find(i => i.id === recipeItem.ingredientId);
+                    if (!ingredient || ingredient.servings <= 0) return sum;
+                    const costPerServing = ingredient.cost / ingredient.servings;
+                    return sum + (costPerServing * recipeItem.servings);
+                }, 0);
+                
+                const costPercent = item.price > 0 ? (totalCost / item.price) * 100 : 0;
+                const profit = item.price - totalCost;
+
+                const row = document.createElement('tr');
+                row.dataset.id = item.id;
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${formatCurrency(item.price)}</td>
+                    <td>${formatCurrency(totalCost)}</td>
+                    <td>${costPercent.toFixed(1)}%</td>
+                    <td>${formatCurrency(profit)}</td>
+                `;
+                if (item.id === selectedMenuItemId) row.classList.add('selected');
+                
+                row.addEventListener('click', () => {
+                    selectedMenuItemId = selectedMenuItemId === item.id ? null : item.id;
+                    selectedIngredientId = null; // Deselect ingredients when a menu item is clicked
+                    renderAll();
+                });
+                menuItemsTableBody.appendChild(row);
+            });
+            updateButtonStates();
+        };
+        
+        // --- Ingredient Modal Logic ---
+        const openIngredientModal = (id = null) => {
+            ingredientForm.reset();
+            const modalTitle = document.getElementById('ingredient-modal-title');
+            if (id) {
+                const ingredient = ingredients.find(ing => ing.id === id);
+                modalTitle.textContent = 'Edit Ingredient';
+                document.getElementById('ingredient-id').value = ingredient.id;
+                document.getElementById('ingredient-name').value = ingredient.name;
+                document.getElementById('ingredient-cost').value = ingredient.cost;
+                document.getElementById('ingredient-servings').value = ingredient.servings;
+            } else {
+                modalTitle.textContent = 'Add Ingredient';
+                document.getElementById('ingredient-id').value = '';
+            }
+            ingredientModal.style.display = 'block';
+        };
+        
+        ingredientForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('ingredient-id').value;
+            const newIngredientData = {
+                name: document.getElementById('ingredient-name').value,
+                cost: parseFloat(document.getElementById('ingredient-cost').value),
+                servings: parseFloat(document.getElementById('ingredient-servings').value),
+            };
+
+            if (id) {
+                ingredients = ingredients.map(ing => ing.id == id ? { ...ing, ...newIngredientData } : ing);
+            } else {
+                newIngredientData.id = Date.now();
+                ingredients.push(newIngredientData);
+            }
+            saveState();
+            ingredientModal.style.display = 'none';
+            renderAll();
+        });
+
+        deleteIngredientBtn.addEventListener('click', () => {
+            if (!selectedIngredientId) return;
+            if (confirm('Are you sure? This will also remove the ingredient from all menu items.')) {
+                ingredients = ingredients.filter(ing => ing.id !== selectedIngredientId);
+                menuItems.forEach(item => {
+                    item.recipe = item.recipe.filter(r => r.ingredientId !== selectedIngredientId);
+                });
+                selectedIngredientId = null;
+                saveState();
+                renderAll();
+            }
+        });
+        
+        // --- Menu Item Modal Logic ---
+        const renderCurrentRecipeList = () => {
+            const listEl = document.getElementById('recipe-ingredients-list');
+            listEl.innerHTML = '';
+            currentRecipe.forEach(recipeItem => {
+                const ingredient = ingredients.find(i => i.id === recipeItem.ingredientId);
+                if (!ingredient) return; // Skip if ingredient not found
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `
+                    <span>${ingredient.name} (${recipeItem.servings} servings)</span>
+                    <button type="button" class="remove-recipe-ing-btn" data-id="${ingredient.id}">&times;</button>
+                `;
+                listEl.appendChild(listItem);
+            });
+
+            listEl.querySelectorAll('.remove-recipe-ing-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const ingredientIdToRemove = parseInt(e.target.dataset.id, 10);
+                    currentRecipe = currentRecipe.filter(item => item.ingredientId !== ingredientIdToRemove);
+                    renderCurrentRecipeList();
+                });
+            });
+        };
+
+        const openMenuItemModal = (id = null) => {
+            menuItemForm.reset();
+            currentRecipe = [];
+            const modalTitle = document.getElementById('menu-item-modal-title');
+            const ingredientSelect = document.getElementById('recipe-ingredient-select');
+            
+            ingredientSelect.innerHTML = '<option value="">-- Choose Ingredient --</option>';
+            ingredients.forEach(ing => {
+                ingredientSelect.innerHTML += `<option value="${ing.id}">${ing.name}</option>`;
+            });
+
+            if (id) {
+                const menuItem = menuItems.find(item => item.id === id);
+                modalTitle.textContent = 'Edit Menu Item';
+                document.getElementById('menu-item-id').value = menuItem.id;
+                document.getElementById('menu-item-name').value = menuItem.name;
+                document.getElementById('menu-item-price').value = menuItem.price;
+                currentRecipe = [...menuItem.recipe];
+            } else {
+                modalTitle.textContent = 'Add Menu Item';
+                document.getElementById('menu-item-id').value = '';
+            }
+            renderCurrentRecipeList();
+            menuItemModal.style.display = 'block';
+        };
+
+        document.getElementById('add-recipe-ing-btn').addEventListener('click', () => {
+            const ingredientId = parseInt(document.getElementById('recipe-ingredient-select').value, 10);
+            const servings = parseFloat(document.getElementById('recipe-ingredient-servings').value);
+
+            if (!ingredientId || !servings || servings <= 0) {
+                alert('Please select an ingredient and enter a valid number of servings.');
+                return;
+            }
+            
+            const existingIndex = currentRecipe.findIndex(item => item.ingredientId === ingredientId);
+            if(existingIndex > -1) {
+                currentRecipe[existingIndex].servings += servings; // Add to existing servings
+            } else {
+                currentRecipe.push({ ingredientId, servings });
+            }
+            
+            renderCurrentRecipeList();
+            document.getElementById('recipe-ingredient-select').value = '';
+            document.getElementById('recipe-ingredient-servings').value = '';
+        });
+
+        menuItemForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const id = document.getElementById('menu-item-id').value;
+            const newItemData = {
+                name: document.getElementById('menu-item-name').value,
+                price: parseFloat(document.getElementById('menu-item-price').value),
+                recipe: currentRecipe
+            };
+            
+            if (!newItemData.name || isNaN(newItemData.price)) {
+                alert('Please enter a name and a valid price.');
+                return;
+            }
+
+            if (id) {
+                menuItems = menuItems.map(item => item.id == id ? { ...item, ...newItemData } : item);
+            } else {
+                newItemData.id = Date.now();
+                menuItems.push(newItemData);
+            }
+            saveState();
+            menuItemModal.style.display = 'none';
+            renderAll();
+        });
+
+        deleteMenuItemBtn.addEventListener('click', () => {
+            if (!selectedMenuItemId) return;
+            if (confirm('Are you sure?')) {
+                menuItems = menuItems.filter(item => item.id !== selectedMenuItemId);
+                selectedMenuItemId = null;
+                saveState();
+                renderAll();
+            }
+        });
+        
+        // --- NEW Tab Switching Logic ---
+        tabLinks.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.dataset.tab;
+
+                // Update active tab link
+                tabLinks.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Update active screen
+                appScreens.forEach(screen => {
+                    if (screen.id === `${targetTab}-screen`) {
+                        screen.classList.add('active');
+                    } else {
+                        screen.classList.remove('active');
+                    }
+                });
+
+                // Reset selections when switching tabs
+                selectedIngredientId = null;
+                selectedMenuItemId = null;
+                renderAll();
+            });
+        });
+
+        // --- General Event Listeners ---
+        addIngredientBtn.addEventListener('click', () => openIngredientModal());
+        editIngredientBtn.addEventListener('click', () => selectedIngredientId && openIngredientModal(selectedIngredientId));
+        addMenuItemBtn.addEventListener('click', () => openMenuItemModal());
+        editMenuItemBtn.addEventListener('click', () => selectedMenuItemId && openMenuItemModal(selectedMenuItemId));
+        
+        closeIngredientModalBtn.addEventListener('click', () => ingredientModal.style.display = 'none');
+        closeMenuItemModalBtn.addEventListener('click', () => menuItemModal.style.display = 'none');
+        
+        window.addEventListener('click', (e) => {
+            if (e.target == ingredientModal) ingredientModal.style.display = 'none';
+            if (e.target == menuItemModal) menuItemModal.style.display = 'none';
+        });
+
+        // --- Initial Render ---
+        const renderAll = () => {
+            if (ingredientModal.style.display === 'block' || menuItemModal.style.display === 'block') {
+                return;
+            }
+            renderIngredients();
+            renderMenuItems();
+            updateButtonStates(); // Call this after rendering to ensure buttons are correctly enabled/disabled
+        };
+
+        renderAll();
+    });
+    </script>
+</body>
+</html>
