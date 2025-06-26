@@ -43,11 +43,11 @@ app.whenReady().then(() => {
   createWindow();
 
   // Explicitly set the update feed URL
-  autoUpdater.setFeedURL({
+/*   autoUpdater.setFeedURL({
     provider: 'github',
     owner: 'dchurd',
     repo: 'FoodCostTracker'
-  });
+  }); */
 
   autoUpdater.checkForUpdates();
 
