@@ -1,6 +1,6 @@
 {
   "name": "food-cost-tracker-app",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A desktop app to track food costs.",
   "main": "main.js",
   "scripts": {
