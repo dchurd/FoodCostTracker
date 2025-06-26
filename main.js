@@ -41,6 +41,14 @@ createPreloadScript();
 // initialization and is ready to create browser windows.
 app.whenReady().then(() => {
   createWindow();
+
+  // Explicitly set the update feed URL
+  autoUpdater.setFeedURL({
+    provider: 'github',
+    owner: 'dchurd',
+    repo: 'FoodCostTracker'
+  });
+
   autoUpdater.checkForUpdates();
 
   // This is for macOS. If no windows are open, create a new one when the
