@@ -1,6 +1,6 @@
 // main.js
 
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, dialog } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
@@ -21,8 +21,6 @@ const createWindow = () => {
 
   // Optional: Open the DevTools for debugging, you can comment this out later.
   // win.webContents.openDevTools();
-
-  autoUpdater.checkForUpdatesAndNotify();
 };
 
 // This script will be run when your webpage has loaded.
@@ -43,6 +41,7 @@ createPreloadScript();
 // initialization and is ready to create browser windows.
 app.whenReady().then(() => {
   createWindow();
+  autoUpdater.checkForUpdates();
 
   // This is for macOS. If no windows are open, create a new one when the
   // dock icon is clicked.
@@ -58,4 +57,24 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+autoUpdater.on('error', (err) => {
+  console.error('Error in auto-updater. ' + err);
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  const dialogOpts = {
+    type: 'info',
+    buttons: ['Restart', 'Later'],
+    title: 'Application Update',
+    message: process.platform === 'win32' ? info.releaseNotes : info.releaseName,
+    detail: 'A new version has been downloaded. Restart the application to apply the updates.'
+  };
+
+  dialog.showMessageBox(dialogOpts).then((returnValue) => {
+    if (returnValue.response === 0) {
+      autoUpdater.quitAndInstall();
+    }
+  });
 });
