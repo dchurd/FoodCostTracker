@@ -296,6 +296,8 @@
                 <div class="screen-header">
                     <h2>Ingredients</h2>
                     <div class="button-group">
+                        <button id="import-ingredients-btn" class="btn">Import</button>
+                        <button id="export-ingredients-btn" class="btn">Export</button>
                         <button id="add-ingredient-btn" class="btn btn-primary">Add</button>
                         <button id="edit-ingredient-btn" class="btn" disabled>Edit</button>
                         <button id="delete-ingredient-btn" class="btn btn-danger" disabled>Delete</button>
@@ -321,6 +323,8 @@
                 <div class="screen-header">
                     <h2>Menu Items</h2>
                     <div class="button-group">
+                        <button id="import-menu-btn" class="btn">Import</button>
+                        <button id="export-menu-btn" class="btn">Export</button>
                         <button id="add-menu-item-btn" class="btn btn-primary">Add</button>
                         <button id="edit-menu-item-btn" class="btn" disabled>Edit</button>
                         <button id="delete-menu-item-btn" class="btn btn-danger" disabled>Delete</button>
@@ -430,6 +434,10 @@
         const addMenuItemBtn = document.getElementById('add-menu-item-btn');
         const editMenuItemBtn = document.getElementById('edit-menu-item-btn');
         const deleteMenuItemBtn = document.getElementById('delete-menu-item-btn');
+        const exportIngredientsBtn = document.getElementById('export-ingredients-btn');
+        const importIngredientsBtn = document.getElementById('import-ingredients-btn');
+        const exportMenuBtn = document.getElementById('export-menu-btn');
+        const importMenuBtn = document.getElementById('import-menu-btn');
 
         const ingredientModal = document.getElementById('ingredient-modal');
         const menuItemModal = document.getElementById('menu-item-modal');
@@ -448,6 +456,42 @@
             // Using a new key to avoid conflicts with old version
             localStorage.setItem('ingredientsV3', JSON.stringify(ingredients));
             localStorage.setItem('menuItemsV3', JSON.stringify(menuItems));
+        };
+
+        const handleExport = (data, fileName) => {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        const handleImport = (event, type) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (confirm(`Are you sure you want to import this file? This will overwrite all current ${type}.`)) {
+                        if (type === 'ingredients') {
+                            ingredients = data;
+                        } else if (type === 'menu items') {
+                            menuItems = data;
+                        }
+                        saveState();
+                        renderAll();
+                    }
+                } catch (error) {
+                    alert('Invalid JSON file.');
+                }
+            };
+            reader.readAsText(file);
         };
 
         const formatCurrency = (value) => {
@@ -753,6 +797,25 @@
         addMenuItemBtn.addEventListener('click', () => openMenuItemModal());
         editMenuItemBtn.addEventListener('click', () => selectedMenuItemId && openMenuItemModal(selectedMenuItemId));
         
+        exportIngredientsBtn.addEventListener('click', () => handleExport(ingredients, 'ingredients.json'));
+        exportMenuBtn.addEventListener('click', () => handleExport(menuItems, 'menu.json'));
+
+        importIngredientsBtn.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => handleImport(e, 'ingredients');
+            input.click();
+        });
+
+        importMenuBtn.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => handleImport(e, 'menu items');
+            input.click();
+        });
+
         closeIngredientModalBtn.addEventListener('click', () => ingredientModal.style.display = 'none');
         closeMenuItemModalBtn.addEventListener('click', () => menuItemModal.style.display = 'none');
         
